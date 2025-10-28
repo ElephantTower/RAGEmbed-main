@@ -4,7 +4,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     volumes:
-      - static-volume:/app/dist
+      - static-volume:/app/build
+    command: sh -c "rm -rf /app/build/* && cp -r /app/dist/* /app/build/ || true"
 
   backend:
     build:
