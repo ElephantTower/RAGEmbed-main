@@ -1,86 +1,102 @@
-.PHONY: all clone-frontend clone-backend init-root-env up down build clean help
+.PHONY: all clone-frontend clone-backend init-root-env up down build clean-all clean-docker help
 
 FRONTEND_REPO = https://github.com/ElephantTower/RAGEmbed-frontend.git
 BACKEND_REPO = https://github.com/ElephantTower/RAGEmbed-backend.git
 FRONTEND_DIR = frontend
 BACKEND_DIR = backend
 COMPOSE_FILE = docker-compose.yml
+PROJECT_NAME = ragembed
 
 all: clone-frontend clone-backend init-root-env up
 
+build-proj: clone-frontend clone-backend init-root-env build
+
 clone-frontend:
 	@if [ ! -d "$(FRONTEND_DIR)" ]; then \
-		echo "Клонируем frontend..."; \
+		echo "Cloning frontend..."; \
 		git clone $(FRONTEND_REPO) $(FRONTEND_DIR); \
 	elif [ -d "$(FRONTEND_DIR)/.git" ]; then \
-		echo "Обновляем frontend..."; \
+		echo "Updating frontend..."; \
 		(cd $(FRONTEND_DIR) && git pull); \
 	else \
-		echo "Директория $(FRONTEND_DIR) существует, но не является git-репозиторием. Пропускаем."; \
+		echo "Directory $(FRONTEND_DIR) exists but is not a git repository. Skipping."; \
 	fi
 	@if [ ! -f "$(FRONTEND_DIR)/.env" ] && [ -f "$(FRONTEND_DIR)/.env-example" ]; then \
 		cp "$(FRONTEND_DIR)/.env-example" "$(FRONTEND_DIR)/.env"; \
-		echo "Создали .env из .env-example для frontend."; \
+		echo "Created .env from .env-example for frontend."; \
 	fi
 
 clone-backend:
 	@if [ ! -d "$(BACKEND_DIR)" ]; then \
-		echo "Клонируем backend..."; \
+		echo "Cloning backend..."; \
 		git clone $(BACKEND_REPO) $(BACKEND_DIR); \
 	elif [ -d "$(BACKEND_DIR)/.git" ]; then \
-		echo "Обновляем backend..."; \
+		echo "Updating backend..."; \
 		(cd $(BACKEND_DIR) && git pull); \
 	else \
-		echo "Директория $(BACKEND_DIR) существует, но не является git-репозиторием. Пропускаем."; \
+		echo "Directory $(BACKEND_DIR) exists but is not a git repository. Skipping."; \
 	fi
 	@if [ ! -f "$(BACKEND_DIR)/.env" ] && [ -f "$(BACKEND_DIR)/.env-example" ]; then \
 		cp "$(BACKEND_DIR)/.env-example" "$(BACKEND_DIR)/.env"; \
-		echo "Создали .env из .env-example для backend."; \
-		echo "Не забудьте изменить ADMIN_SECRET в $(BACKEND_DIR)/.env перед запуском!"; \
+		echo "Created .env from .env-example for backend."; \
+		echo "Don't forget to change ADMIN_SECRET in $(BACKEND_DIR)/.env before starting!"; \
 	fi
 
 init-root-env:
 	@if [ ! -f ".env" ] && [ -f ".env-example" ]; then \
 		cp .env-example .env; \
-		echo "Создали корневой .env из .env-example."; \
+		echo "Created root .env from .env-example."; \
 	elif [ ! -f ".env" ] && [ ! -f ".env-example" ]; then \
-		echo "Предупреждение: .env и .env-example отсутствуют в корне. Создайте .env вручную с необходимыми переменными (APP_PORT, POSTGRES_USER и т.д.) для docker-compose."; \
+		echo "Warning: .env and .env-example are missing in the root. Create .env manually with required variables (APP_PORT, POSTGRES_USER, etc.) for docker-compose."; \
 	fi
 
 up:
-	@echo "Запускаем docker-compose..."
-	docker-compose -f $(COMPOSE_FILE) up -d
+	@echo "Starting docker-compose..."
+	docker compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) up -d --build
+
+up-fg:
+	@echo "Starting docker-compose in foreground..."
+	docker compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) up --build
 
 down:
-	@echo "Останавливаем docker-compose..."
-	docker-compose -f $(COMPOSE_FILE) down
+	@echo "Stopping docker-compose..."
+	docker compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) down
 
 build:
-	@echo "Собираем образы..."
-	docker-compose -f $(COMPOSE_FILE) build --no-cache
+	@echo "Building images..."
+	docker compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) build --no-cache
 
-clean:
-	@echo "Очищаем проект..."
+clean-all:
+	@echo "Cleaning project..."
 	@if [ -d "$(FRONTEND_DIR)" ]; then rm -rf $(FRONTEND_DIR); fi
 	@if [ -d "$(BACKEND_DIR)" ]; then rm -rf $(BACKEND_DIR); fi
-	docker-compose -f $(COMPOSE_FILE) down -v
+	docker compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) down -v
+	docker system prune -f
+
+clean-docker:
+	@echo "Cleaning Docker..."
+	docker compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) down -v
 	docker system prune -f
 
 help:
-	@echo "Доступные цели:"
-	@echo "  all          - Клонировать репозитории, инициализировать .env и запустить (up)"
-	@echo "  clone-frontend - Клонировать только frontend"
-	@echo "  clone-backend  - Клонировать только backend"
-	@echo "  init-root-env - Создать корневой .env из .env-example (если есть)"
-	@echo "  up           - Запустить docker-compose (up -d)"
-	@echo "  down         - Остановить docker-compose"
-	@echo "  build        - Собрать образы (docker-compose build)"
-	@echo "  clean        - Очистить репозитории и volumes"
-	@echo "  help         - Показать эту справку"
+	@echo "Available targets:"
+	@echo "  all            - Clone repositories, initialize .env and start (up)"
+	@echo "  build-proj     - Clone repositories, initialize .env and build images"
+	@echo "  clone-frontend - Clone frontend only"
+	@echo "  clone-backend  - Clone backend only"
+	@echo "  init-root-env  - Create root .env from .env-example (if exists)"
+	@echo "  up             - Start docker-compose (up -d --build)"
+	@echo "  up-fg          - Start docker-compose in foreground (up --build)"
+	@echo "  down           - Stop docker-compose"
+	@echo "  build          - Build images (docker compose build --no-cache)"
+	@echo "  clean-all      - Clean repositories, volumes and prune Docker"
+	@echo "  clean-docker   - Clean volumes and prune Docker (without repositories)"
+	@echo "  help           - Show this help"
 	@echo ""
-	@echo "Предполагается: git, docker и docker-compose установлены."
-	@echo "На Windows: используйте Git Bash или WSL."
+	@echo "Requires: git, docker and docker compose installed."
+	@echo "On Windows: use Git Bash or WSL."
 	@echo ""
-	@echo "Примечание: При клонировании backend автоматически создастся .env из .env-example."
-	@echo "           Обязательно измените ADMIN_SECRET в backend/.env перед запуском!"
-	@echo "           Для docker-compose создайте .env в корне (или используйте make init-root-env)."
+	@echo "Note: When cloning backend, .env is automatically created from .env-example."
+	@echo "      Be sure to change ADMIN_SECRET in backend/.env before starting!"
+	@echo "      For docker-compose, create .env in root (or use make init-root-env)."
+	@echo "      Project name: '$(PROJECT_NAME)' for container isolation."
