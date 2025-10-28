@@ -94,7 +94,10 @@ Run `make help` for a full list:
    POSTGRES_USER="postgres"
    POSTGRES_PASSWORD="postgres"
    POSTGRES_DB="ragembed"
-   MODEL_NAMES="embeddinggemma nomic-embed-text snowflake-arctic-embed:m"
+   GITHUB_REPO="ElephantTower/RAGEmbed-main"
+   RELEASE_TAG="db"
+   DUMP_FILENAME="db_dump.backup"
+   DUMP_PATH="/dumps/db_dump.backup"
    ```
 
 - **Backend `.env`** (auto-generated; edit manually):
