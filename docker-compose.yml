@@ -63,10 +63,9 @@ services:
     command: /init-ollama.sh
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
-      interval: 60s
-      timeout: 30s 
-      retries: 10
-      start_period: 600s
+      interval: 30s
+      timeout: 10s
+      retries: 20
     restart: always
 
 volumes:
