@@ -7,7 +7,7 @@ BACKEND_DIR = backend
 COMPOSE_FILE = docker-compose.yml
 PROJECT_NAME = ragembed
 
-all: clone-frontend clone-backend init-root-env up
+all: clone-frontend clone-backend init-root-env up-init-db 
 
 build-proj: clone-frontend clone-backend init-root-env build
 
@@ -78,9 +78,13 @@ clean-docker:
 	docker compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) down -v
 	docker system prune -f
 
+up-init-db:
+	@echo "DB initialization..."
+	docker compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) --profile init up -d --build
+
 help:
 	@echo "Available targets:"
-	@echo "  all            - Clone repositories, initialize .env and start (up)"
+	@echo "  all            - Clone repositories, initialize .env and start with DB initialization"
 	@echo "  build-proj     - Clone repositories, initialize .env and build images"
 	@echo "  clone-frontend - Clone frontend only"
 	@echo "  clone-backend  - Clone backend only"
@@ -91,6 +95,7 @@ help:
 	@echo "  build          - Build images (docker compose build --no-cache)"
 	@echo "  clean-all      - Clean repositories, volumes and prune Docker"
 	@echo "  clean-docker   - Clean volumes and prune Docker (without repositories)"
+	@echo "  up-init-db     - Start docker-compose with init (initializating DB) (--profile init up -d --build)"
 	@echo "  help           - Show this help"
 	@echo ""
 	@echo "Requires: git, docker and docker compose installed."
