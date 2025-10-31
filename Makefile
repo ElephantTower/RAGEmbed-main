@@ -7,9 +7,17 @@ BACKEND_DIR = backend
 COMPOSE_FILE = docker-compose.yml
 PROJECT_NAME = ragembed
 
-all: clone-frontend clone-backend init-root-env up-init-db 
+all: update-root clone-frontend clone-backend init-root-env up-init-db 
 
-build-proj: clone-frontend clone-backend init-root-env build
+build-proj: update-root clone-frontend clone-backend init-root-env build
+
+update-root:
+	@if [ -d ".git" ]; then \
+		echo "Updating root repository..."; \
+		git pull; \
+	elif [ -d ".git" ]; then \
+		echo "Root directory is not a git repository. Skipping."; \
+	fi
 
 clone-frontend:
 	@if [ ! -d "$(FRONTEND_DIR)" ]; then \
@@ -86,6 +94,7 @@ help:
 	@echo "Available targets:"
 	@echo "  all            - Clone repositories, initialize .env and start with DB initialization"
 	@echo "  build-proj     - Clone repositories, initialize .env and build images"
+	@echo "  update-root    - Update the root git repository (if it is a git repo)"
 	@echo "  clone-frontend - Clone frontend only"
 	@echo "  clone-backend  - Clone backend only"
 	@echo "  init-root-env  - Create root .env from .env-example (if exists)"
