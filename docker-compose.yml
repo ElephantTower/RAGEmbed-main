@@ -22,6 +22,9 @@ services:
       ollama:
         condition: service_healthy
     restart: always
+    networks:
+      default:
+        ipv4_address: 10.5.0.5
 
   nginx:
     image: nginx:alpine
@@ -102,3 +105,11 @@ volumes:
   postgres-data:
   ollama_data:
   dumps:
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.5.0.0/16
+          gateway: 10.5.0.1
